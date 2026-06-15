@@ -10,16 +10,14 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Modules\UserManagement\Models\User;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ReceptionistTable extends TableWidget
 {
@@ -58,11 +56,18 @@ class ReceptionistTable extends TableWidget
                     ->label('Scanner Code')
                     ->copyable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                // TextColumn::make('scanner_qr')
+                //     ->label('Scanner QR')
+                //     ->getStateUsing(fn(EventReceptionist $record) => $record->code_uuid ? url("/scan-presence/{$record->code_uuid}") : null)
+                //     ->html()
+                //     ->formatStateUsing(fn(?string $state) => $state ? '<div style="background: white; padding: 2px; border-radius: 4px; border: 1px solid #e5e7eb; display: inline-block; cursor: pointer;">' . QrCode::size(40)->margin(0)->generate($state) . '</div>' : '—')
+                //     ->action(fn(EventReceptionist $record) => $record->code_uuid ? $this->mountTableAction('viewQr', $record->getKey()) : null),
                 TextColumn::make('scanner_link')
                     ->label('Scanner Link')
-                    ->getStateUsing(fn(EventReceptionist $record) => url("/scan-presence/{$record->code_uuid}"))
+                    ->getStateUsing(fn(EventReceptionist $record) => $record->code_uuid ? url("/scan-presence/{$record->code_uuid}") : null)
                     ->copyable()
-                    ->tooltip(fn(EventReceptionist $record) => url("/scan-presence/{$record->code_uuid}")),
+                    ->tooltip(fn(EventReceptionist $record) => $record->code_uuid ? url("/scan-presence/{$record->code_uuid}") : null)
+                    ->placeholder('—'),
                 TextColumn::make('pin')
                     ->label('PIN')
                     // ->toggleable(isToggledHiddenByDefault: true)
@@ -113,13 +118,46 @@ class ReceptionistTable extends TableWidget
             )
             ->recordActions(
                 array_filter([
+                    // View QR Code modal
+                    Action::make('viewQr')
+                        ->label('View QR')
+                        ->icon('heroicon-o-qr-code')
+                        ->color('success')
+                        ->visible(fn(EventReceptionist $record) => !empty($record->code_uuid))
+                        ->modalHeading('Scanner QR Code')
+                        ->modalWidth('md')
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Close')
+                        ->modalContent(fn(EventReceptionist $record) => view(
+                            'filament.resources.events.widgets.receptionist-qr-modal',
+                            ['url' => url("/scan-presence/{$record->code_uuid}")]
+                        )),
+
                     // Copy scanner link action
                     Action::make('openScanner')
                         ->label('Open Scanner')
-                        ->icon('heroicon-o-qr-code')
+                        ->icon('heroicon-o-arrow-top-right-on-square')
                         ->color('info')
+                        ->visible(fn(EventReceptionist $record) => !empty($record->code_uuid))
                         ->url(fn(EventReceptionist $record) => url("/scan-presence/{$record->code_uuid}"))
                         ->openUrlInNewTab(),
+
+                    // Generate link if it doesn't exist
+                    Action::make('generateScannerLink')
+                        ->label('Generate Link')
+                        ->icon('heroicon-o-arrow-path')
+                        ->color('warning')
+                        ->visible(fn(EventReceptionist $record) => empty($record->code_uuid))
+                        ->action(function (EventReceptionist $record) {
+                            $record->update([
+                                'code_uuid' => (string) \Illuminate\Support\Str::uuid(),
+                            ]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Scanner Link Generated')
+                                ->success()
+                                ->send();
+                        }),
 
                     !$this->isReceptionist() ? DeleteAction::make() : null,
                 ])

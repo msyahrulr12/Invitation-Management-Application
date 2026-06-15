@@ -1,0 +1,71 @@
+# ==============================================================================
+# .dockerignore — Invitation Management Application
+# Reduces build context size and prevents sensitive files from being copied
+# ==============================================================================
+
+# ── Version Control ──────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# ── Dependencies (rebuilt inside Docker) ─────────────────────────────────────
+node_modules
+vendor
+
+# ── Built Assets (rebuilt inside Docker) ─────────────────────────────────────
+public/build
+public/hot
+
+# ── Environment Files (secrets — NEVER copy into image) ─────────────────────
+.env
+.env.backup
+.env.production
+.env.docker
+
+# ── IDE & Editor ─────────────────────────────────────────────────────────────
+.vscode
+.idea
+.fleet
+.nova
+.zed
+.editorconfig
+.phpactor.json
+
+# ── Storage (ephemeral / runtime data) ───────────────────────────────────────
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*.php
+storage/app/public/*
+storage/pail
+
+# ── Testing ──────────────────────────────────────────────────────────────────
+tests
+.phpunit.cache
+.phpunit.result.cache
+phpunit.xml
+
+# ── Binaries & Build Artifacts ───────────────────────────────────────────────
+frankenphp
+frankenphp-worker.php
+**/caddy
+*.tar.gz
+
+# ── Docker (avoid recursion) ─────────────────────────────────────────────────
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+
+# ── Documentation & Misc ────────────────────────────────────────────────────
+*.md
+LICENSE
+Makefile
+Homestead.json
+Homestead.yaml
+Thumbs.db
+.DS_Store
+*.log
+
+# ── Backup Composer File ────────────────────────────────────────────────────
+composer copy.json

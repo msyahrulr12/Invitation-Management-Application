@@ -6,6 +6,7 @@ use App\Models\EventReceptionist;
 use App\Models\Visitor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -78,6 +79,11 @@ class QrScanner extends Component
         $this->eventId = $event->id;
         $this->receptionistId = $receptionist->id;
         $this->receptionistCodeUuid = $receptionist->code_uuid;
+
+        // Restore PIN auth from session (so PIN is only entered once)
+        if (Session::get("scanner_auth_{$this->uuid}") === true) {
+            $this->isAuthenticated = true;
+        }
     }
 
     public function verifyPin(): void
@@ -98,6 +104,9 @@ class QrScanner extends Component
         }
 
         $this->isAuthenticated = true;
+
+        // Persist in session so PIN is only entered once
+        Session::put("scanner_auth_{$this->uuid}", true);
     }
 
     public function handleScannedCode(string $decodedText): void

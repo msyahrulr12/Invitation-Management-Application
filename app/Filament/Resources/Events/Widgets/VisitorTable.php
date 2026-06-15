@@ -69,6 +69,10 @@ class VisitorTable extends TableWidget
                         default => 'gray',
                     })
                     ->searchable(),
+                TextColumn::make('qr_code_path')
+                    ->label('QR Code')
+                    ->state(fn(Visitor $record): string => $record->qr_code_path ? asset('storage/' . $record->qr_code_path) : '—')
+                    ->copyable(),
                 TextColumn::make('presence_timestamp')
                     ->label('Presence At')
                     ->dateTime()

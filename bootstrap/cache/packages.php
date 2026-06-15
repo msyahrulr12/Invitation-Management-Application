@@ -115,24 +115,6 @@
       0 => 'Kirschbaum\\PowerJoins\\PowerJoinsServiceProvider',
     ),
   ),
-  'laravel/boost' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Boost\\BoostServiceProvider',
-    ),
-  ),
-  'laravel/mcp' => 
-  array (
-    'aliases' => 
-    array (
-      'Mcp' => 'Laravel\\Mcp\\Server\\Facades\\Mcp',
-    ),
-    'providers' => 
-    array (
-      0 => 'Laravel\\Mcp\\Server\\McpServiceProvider',
-    ),
-  ),
   'laravel/octane' => 
   array (
     'aliases' => 
@@ -142,27 +124,6 @@
     'providers' => 
     array (
       0 => 'Laravel\\Octane\\OctaneServiceProvider',
-    ),
-  ),
-  'laravel/pail' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Pail\\PailServiceProvider',
-    ),
-  ),
-  'laravel/roster' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Roster\\RosterServiceProvider',
-    ),
-  ),
-  'laravel/sail' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Laravel\\Sail\\SailServiceProvider',
     ),
   ),
   'laravel/tinker' => 
@@ -201,13 +162,6 @@
       0 => 'Carbon\\Laravel\\ServiceProvider',
     ),
   ),
-  'nunomaduro/collision' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    ),
-  ),
   'nunomaduro/termwind' => 
   array (
     'providers' => 
@@ -231,13 +185,6 @@
     'providers' => 
     array (
       0 => 'OwenIt\\Auditing\\AuditingServiceProvider',
-    ),
-  ),
-  'pestphp/pest-plugin-laravel' => 
-  array (
-    'providers' => 
-    array (
-      0 => 'Pest\\Laravel\\PestServiceProvider',
     ),
   ),
   'ryangjchandler/blade-capture-directive' => 

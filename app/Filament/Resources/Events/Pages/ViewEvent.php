@@ -7,6 +7,7 @@ use App\Filament\Resources\Events\Widgets\VisitorTable;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 use App\Filament\Resources\Events\EventResource;
+use App\Filament\Resources\Events\Widgets\VisitorQrListWidget;
 use Filament\Schemas\Components\Livewire;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
@@ -50,6 +51,12 @@ class ViewEvent extends ViewRecord
                         Tab::make('Visitor')
                             ->schema([
                                 Livewire::make(VisitorTable::class, [
+                                    'record' => $this->getRecord(),
+                                ]),
+                            ]),
+                        Tab::make('Visitor QR List')
+                            ->schema([
+                                Livewire::make(VisitorQrListWidget::class, [
                                     'record' => $this->getRecord(),
                                 ]),
                             ]),
