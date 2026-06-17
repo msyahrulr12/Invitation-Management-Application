@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Modules\LogManagement\Models\LogModel;
 
 #[Layout('layouts.scanner-layout')]
 class QrScanner extends Component
@@ -21,6 +22,7 @@ class QrScanner extends Component
     public ?int $eventId = null;
     public ?int $receptionistId = null;
     public ?string $receptionistCodeUuid = null;
+    public ?int $receptionistUserId = null;
 
     // PIN auth state
     public bool $isAuthenticated = false;
@@ -79,6 +81,7 @@ class QrScanner extends Component
         $this->eventId = $event->id;
         $this->receptionistId = $receptionist->id;
         $this->receptionistCodeUuid = $receptionist->code_uuid;
+        $this->receptionistUserId = $receptionist->user_id;
 
         // Restore PIN auth from session (so PIN is only entered once)
         if (Session::get("scanner_auth_{$this->uuid}") === true) {
@@ -119,12 +122,39 @@ class QrScanner extends Component
 
             if (!$visitor) {
                 $this->setScanFailure('Visitor not found. Invalid QR code.');
+                LogModel::create([
+                    'level' => 'warning',
+                    'message' => 'QR Scan Failed: Visitor not found.',
+                    'context' => json_encode([
+                        'scanned_code' => substr($decodedText, 0, 100),
+                        'receptionist_id' => $this->receptionistId,
+                        'receptionist_name' => $this->receptionistName,
+                        'event_id' => $this->eventId,
+                        'event_name' => $this->eventName,
+                    ]),
+                    'user_id' => $this->receptionistUserId ?: \Illuminate\Support\Facades\Auth::id(),
+                ]);
                 return;
             }
 
             // Validate visitor belongs to the same event
             if ($visitor->event_id !== $this->eventId) {
                 $this->setScanFailure('This visitor is not registered for this event.');
+                LogModel::create([
+                    'level' => 'warning',
+                    'message' => 'QR Scan Failed: Visitor registered for different event.',
+                    'context' => json_encode([
+                        'visitor_id' => $visitor->id,
+                        'visitor_name' => $visitor->name,
+                        'visitor_event_id' => $visitor->event_id,
+                        'scanned_code' => substr($decodedText, 0, 100),
+                        'receptionist_id' => $this->receptionistId,
+                        'receptionist_name' => $this->receptionistName,
+                        'event_id' => $this->eventId,
+                        'event_name' => $this->eventName,
+                    ]),
+                    'user_id' => $this->receptionistUserId ?: \Illuminate\Support\Facades\Auth::id(),
+                ]);
                 return;
             }
 
@@ -133,6 +163,21 @@ class QrScanner extends Component
                 $this->setScanFailure(
                     "Visitor \"{$visitor->name}\" has already been marked as present at {$visitor->presence_timestamp?->format('H:i:s')}."
                 );
+                LogModel::create([
+                    'level' => 'warning',
+                    'message' => 'QR Scan Failed: Visitor already present.',
+                    'context' => json_encode([
+                        'visitor_id' => $visitor->id,
+                        'visitor_name' => $visitor->name,
+                        'scanned_code' => substr($decodedText, 0, 100),
+                        'receptionist_id' => $this->receptionistId,
+                        'receptionist_name' => $this->receptionistName,
+                        'event_id' => $this->eventId,
+                        'event_name' => $this->eventName,
+                        'presence_timestamp' => $visitor->presence_timestamp?->toIso8601String(),
+                    ]),
+                    'user_id' => $this->receptionistUserId ?: \Illuminate\Support\Facades\Auth::id(),
+                ]);
                 return;
             }
 
@@ -148,9 +193,39 @@ class QrScanner extends Component
             $this->scannedVisitorName = $visitor->name;
             $this->setScanSuccess("Welcome, {$visitor->name}! Presence recorded successfully.");
 
+            LogModel::create([
+                'level' => 'info',
+                'message' => "QR Scan Success: Presence recorded for {$visitor->name}.",
+                'context' => json_encode([
+                    'visitor_id' => $visitor->id,
+                    'visitor_name' => $visitor->name,
+                    'scanned_code' => substr($decodedText, 0, 100),
+                    'receptionist_id' => $this->receptionistId,
+                    'receptionist_name' => $this->receptionistName,
+                    'event_id' => $this->eventId,
+                    'event_name' => $this->eventName,
+                ]),
+                'user_id' => $this->receptionistUserId ?: \Illuminate\Support\Facades\Auth::id(),
+            ]);
+
             Log::info("Visitor presence recorded: {$visitor->name} (UUID: {$decodedText}) by receptionist: {$this->receptionistName}");
         } catch (\Throwable $e) {
             Log::error("Scan presence error: {$e->getMessage()}");
+            LogModel::create([
+                'level' => 'error',
+                'message' => 'QR Scan Exception: ' . substr($e->getMessage(), 0, 150),
+                'context' => json_encode([
+                    'exception' => get_class($e),
+                    'message' => substr($e->getMessage(), 0, 500),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                    'scanned_code' => substr($decodedText, 0, 100),
+                    'receptionist_id' => $this->receptionistId,
+                    'receptionist_name' => $this->receptionistName,
+                    'event_id' => $this->eventId,
+                ]),
+                'user_id' => $this->receptionistUserId ?: \Illuminate\Support\Facades\Auth::id(),
+            ]);
             $this->setScanFailure('An error occurred while processing the QR code. Please try again.');
         }
     }
